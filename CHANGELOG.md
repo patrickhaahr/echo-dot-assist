@@ -2,6 +2,13 @@
 
 What changed for people using the Echo, newest first. Details and measurements are in [PLAN.md](PLAN.md).
 
+## 2026-11-12
+
+- **Duplex for a realtime agent (`-D`, Wyoming).** With `-D` in `ARGS` the microphone keeps streaming while a reply
+  plays, and a wake word during the reply is left to the client: for a client that cuts replies itself, such as
+  hermes-talk's Echo surface (`hermes talk echo`), which talks with a realtime voice model straight from the Echo.
+  Amazon's echo canceller keeps the reply out of the microphone. Without `-D` nothing changes.
+
 ## 2026-11-11
 
 - **Music Assistant pairs with the Echo by itself.** With Home Assistant 2026.11 and Music Assistant 2.10.9 or later
