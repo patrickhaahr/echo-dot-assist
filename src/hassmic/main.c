@@ -1587,7 +1587,9 @@ static int kiosk_score(uint64_t end, int simulated)
 static void send_out(const int16_t *pcm, size_t n, int sound)
 {
     static int16_t out[1024 + MICDENOISE_FRAME];
-    mic_gain.hold = sound;
+    /* -D: the reply is our own sound too.  The echo canceller leaves a trace of it that the gain would bring up to
+     * speech level (up to +36 dB), and the client would answer it as the talker */
+    mic_gain.hold = sound || (core_duplex && atomic_load(&tts_on));
     micend_run(&mic_end, pcm, n, mic_gain.hold);        /* the level as heard, before the gain; heard_end() acts on it */
     while (n) {
         size_t k = n < 1024 ? n : 1024, m = k;
