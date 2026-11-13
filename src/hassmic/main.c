@@ -2152,6 +2152,9 @@ static void *playback_thread(void *arg)
 
 void core_tts_begin(unsigned rate, unsigned channels, int media)
 {
+    /* -D: a reply with no run is the client speaking first (its own news).  It opens a run, so the answer needs no
+     * wake word, and the run ends at audio-stop as any other */
+    if (core_duplex && !media && state == IDLE && satellite_running && !core_muted()) pipeline_start(0);
     if (!wake_wait && !core_duplex) { atomic_store(&streaming, 0); mic_stopped(); }     /* wake_wait: a chime and then the message */
     if (state != SPEAKING) speak_media = media;
     core_set_state(SPEAKING);

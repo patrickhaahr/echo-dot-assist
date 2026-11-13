@@ -72,6 +72,23 @@ async def one(duplex):
             after, _ = await mic_chunks_during(client, 0.5)
             assert after == 0, "the microphone still streams after the run ended"
             print(f"ok   {'-D' if duplex else 'no -D'}: microphone chunks before {before}, while speaking {during}, after the run 0")
+
+        async with AsyncTcpClient("127.0.0.1", PORT) as client:     # the client speaks first, no wake word
+            await client.write_event(RunSatellite().event())
+            await asyncio.sleep(0.2)
+            await client.write_event(AudioStart(rate=RATE, width=2, channels=1).event())
+            for _ in range(5):
+                await client.write_event(AudioChunk(rate=RATE, width=2, channels=1, audio=b"\0\0" * (RATE // 10)).event())
+                await asyncio.sleep(0.1)
+            first, _ = await mic_chunks_during(client, 0.5)
+            if duplex: assert first > 0, "duplex: speaking first opened no microphone for the answer"
+            else: assert first == 0, f"without -D speaking first is an announcement ({first} chunks)"
+            await client.write_event(AudioStop().event())
+            _, played = await mic_chunks_during(client, 2)
+            assert played, "no played after audio-stop"
+            after, _ = await mic_chunks_during(client, 0.5)
+            assert after == 0, "the microphone still streams after the client's own message"
+            print(f"ok   {'-D' if duplex else 'no -D'}: speaking first, microphone chunks {first}")
     finally:
         proc.send_signal(signal.SIGTERM)
         proc.wait(timeout=5)
