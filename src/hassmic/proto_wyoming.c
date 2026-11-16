@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <time.h>
 #include "board.h"
+#include "clock.h"
 #include "core.h"
 #include "screen.h"
 #include "wyoming.h"
@@ -61,6 +62,12 @@ static void handle(const struct wy_event *ev)
     else if (!strcmp(t, "describe")) send_info();
     else if (!strcmp(t, "run-satellite")) { fprintf(stderr, "satellite: running\n"); core_link(1, 1); }
     else if (!strcmp(t, "pause-satellite")) core_link_pause();
+    else if (!strcmp(t, "time")) {          /* the client's clock: in Wyoming mode nothing else sets it after a power loss */
+        long epoch = 0; char tz[100] = "";
+        wy_json_int(ev->json, "epoch", &epoch); wy_json_str(ev->json, "tz", tz, sizeof tz);
+        if (epoch > 0) clock_from_ha((uint32_t)epoch);
+        clock_zone_from_ha(tz);
+    }
     else if (!strcmp(t, "detection")) core_set_state(LISTENING);
     else if (!strcmp(t, "voice-stopped") || !strcmp(t, "transcript")) {
         if (!strcmp(t, "transcript")) {
