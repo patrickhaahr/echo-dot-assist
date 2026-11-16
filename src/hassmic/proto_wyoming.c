@@ -1,4 +1,5 @@
 /* Wyoming satellite protocol: Home Assistant connects to us (wyoming integration). */
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -15,8 +16,11 @@ static int client = -1;
 
 static void send_event(const char *type, const char *data, const void *payload, size_t len)
 {
+    static pthread_mutex_t send_lock = PTHREAD_MUTEX_INITIALIZER;   /* mic audio and events come from different threads */
+    pthread_mutex_lock(&send_lock);
     if (client >= 0 && wy_write(client, type, data, payload, len) < 0)
         shutdown(client, SHUT_RDWR);        /* reader thread notices and cleans up */
+    pthread_mutex_unlock(&send_lock);
 }
 
 static void start(void)
@@ -38,6 +42,9 @@ static void audio(const void *pcm, size_t len)
 }
 
 static void played(void) { send_event("played", NULL, NULL, 0); }
+
+/* -D: the wake word said over a reply is left to the client (main.c); this tells it, so it can stop the reply */
+static void wake(const char *event) { if (!strcmp(event, "detected")) send_event("detection", NULL, NULL, 0); }
 
 static void send_info(void)
 {
@@ -118,4 +125,4 @@ static void print_mdns(void)
            "  <service><type>_wyoming._tcp</type><port>%d</port></service>\n</service-group>\n", core_name, core_port);
 }
 
-const struct proto proto_wyoming = { "wyoming", 16700, 0, serve, start, audio, NULL, NULL, played, NULL, NULL, print_mdns, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+const struct proto proto_wyoming = { "wyoming", 16700, 0, serve, start, audio, NULL, NULL, played, NULL, NULL, print_mdns, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, wake, NULL, NULL };
