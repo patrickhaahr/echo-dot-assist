@@ -1632,7 +1632,9 @@ static void send_mic(const int16_t *pcm, size_t n, uint64_t at)
         if (mic_denoise) fprintf(stderr, ", noise reduction %d dB", denoise_db[mic_denoise]);
         micend_start(&mic_end, proto->end ? end_mode : MICEND_OFF, micgain_talker_db(&mic_gain), at, ring_speech);
         if (talker_from > at) mic_end.from = talker_from;   /* the wake word sent too: not the request's speech yet */
-        mic_gain.talker_min_db = mic_end.mode ? mic_end.talker_db - micend_margin(mic_end.mode) : -1000;   /* nor the gain's */
+        mic_gain.talker_min_db = mic_end.mode ? mic_end.talker_db - micend_margin(mic_end.mode)      /* nor the gain's */
+                               : core_duplex ? micgain_talker_db(&mic_gain) - MICGAIN_DUPLEX_MARGIN_DB : -1000;
+        if (core_duplex && !mic_end.mode) fprintf(stderr, ", room under %.1f dBFS not lifted", mic_gain.talker_min_db);
         if (mic_end.mode) fprintf(stderr, ", end heard here: %s", micend_names[mic_end.mode]);
         fprintf(stderr, "\n");
         if (mic_denoise) {

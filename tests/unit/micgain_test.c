@@ -109,5 +109,11 @@ int main(void)
     micgain_init(&g, MICGAIN_LEVEL_MIN); micgain_start(&g, -55);     /* another level from the slider */
     run(&g, q1);
     check(fabs(active(out, in, q0 + RATE, q1) - MICGAIN_LEVEL_MIN) < 1.5, "quiet talker at the lowest mic level, dBFS", active(out, in, q0 + RATE, q1));
+
+    micgain_init(&g, MICGAIN_LEVEL); micgain_start(&g, -40);
+    g.talker_min_db = micgain_talker_db(&g) - MICGAIN_DUPLEX_MARGIN_DB;
+    float at_wake = g.gain_db;
+    run(&g, q1);
+    check(g.gain_db <= at_wake, "voices in the room far under the talker are not lifted, dB", g.gain_db - at_wake);
     return bad;
 }
