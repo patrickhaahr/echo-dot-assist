@@ -115,5 +115,18 @@ int main(void)
     float at_wake = g.gain_db;
     run(&g, q1);
     check(g.gain_db <= at_wake, "voices in the room far under the talker are not lifted, dB", g.gain_db - at_wake);
+
+    size_t c0 = t; size_t c1 = make(in, c0, 2.5, -42);
+    float loud_kw = -30.0f;
+    if (loud_kw > MICGAIN_DUPLEX_START_MAX_DB) loud_kw = MICGAIN_DUPLEX_START_MAX_DB;
+    micgain_init(&g, MICGAIN_LEVEL); micgain_start(&g, loud_kw);
+    float duplex_min = micgain_talker_db(&g) - MICGAIN_DUPLEX_MARGIN_DB;
+    if (duplex_min > MICGAIN_DUPLEX_MIN_CEIL_DB) duplex_min = MICGAIN_DUPLEX_MIN_CEIL_DB;
+    g.talker_min_db = duplex_min;
+    micgain_run(&g, in + c0, out, c1 - c0);
+    check(fabs(active(out, in + c0, RATE, c1 - c0) - want) < 2.0, "casual speech after yelled wake word reaches target, dBFS", active(out, in + c0, RATE, c1 - c0));
+    float after_casual = g.gain_db;
+    micgain_run(&g, in + q0, out, q1 - q0);
+    check(g.gain_db <= after_casual, "room noise under duplex floor stays unlifted after loud wake, dB", g.gain_db - after_casual);
     return bad;
 }

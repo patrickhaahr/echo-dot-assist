@@ -16,6 +16,8 @@
 #define MICGAIN_MAX_DB 36.0f            /* the floor (-67 dBFS) stays below -30 dBFS even for the quietest talker */
 #define MICGAIN_MIN_DB -12.0f           /* shouting into it: the stock path reaches 0 dBFS a hand's width away */
 #define MICGAIN_DUPLEX_MARGIN_DB 8.0f
+#define MICGAIN_DUPLEX_START_MAX_DB -38.0f
+#define MICGAIN_DUPLEX_MIN_CEIL_DB -48.0f
 
 struct micgain {
     int level;                          /* speech level wanted, dBFS (MICGAIN_LEVEL_MIN..MAX) */
