@@ -47,7 +47,7 @@ static double frame_gain(const int16_t *i, const int16_t *o)     /* of a 10 ms f
     return b / a;
 }
 
-static int16_t in[RATE * 12], out[RATE * 12];
+static int16_t in[RATE * 15], out[RATE * 15];
 
 static void run(struct micgain *g, size_t n)     /* in blocks of odd size, as the mixer's are not frame aligned */
 {
@@ -116,7 +116,8 @@ int main(void)
     run(&g, q1);
     check(g.gain_db <= at_wake, "voices in the room far under the talker are not lifted, dB", g.gain_db - at_wake);
 
-    size_t c0 = t; size_t c1 = make(in, c0, 2.5, -42);
+    size_t c0 = t; size_t c1 = make(in, c0, 2.5, -50);
+    size_t r0 = c1; size_t r1 = make(in, r0, 2.0, -60);
     float loud_kw = -30.0f;
     if (loud_kw > MICGAIN_DUPLEX_START_MAX_DB) loud_kw = MICGAIN_DUPLEX_START_MAX_DB;
     micgain_init(&g, MICGAIN_LEVEL); micgain_start(&g, loud_kw);
@@ -124,9 +125,9 @@ int main(void)
     if (duplex_min > MICGAIN_DUPLEX_MIN_CEIL_DB) duplex_min = MICGAIN_DUPLEX_MIN_CEIL_DB;
     g.talker_min_db = duplex_min;
     micgain_run(&g, in + c0, out, c1 - c0);
-    check(fabs(active(out, in + c0, RATE, c1 - c0) - want) < 2.0, "casual speech after yelled wake word reaches target, dBFS", active(out, in + c0, RATE, c1 - c0));
+    check(fabs(active(out, in + c0, RATE, c1 - c0) - want) < 2.0, "casual -50 dBFS speech after yelled wake word reaches target, dBFS", active(out, in + c0, RATE, c1 - c0));
     float after_casual = g.gain_db;
-    micgain_run(&g, in + q0, out, q1 - q0);
+    micgain_run(&g, in + r0, out, r1 - r0);
     check(g.gain_db <= after_casual, "room noise under duplex floor stays unlifted after loud wake, dB", g.gain_db - after_casual);
     return bad;
 }
